@@ -1,0 +1,16 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.9
+pydantic==2.7.1
+faker==25.0.0
+python-multipart==0.0.9
+alembic==1.13.1
+python-dotenv==1.0.1
+pandas>=2.1.0
+
+# Updated on 2026-02-23 by Sunay
+change 10
+change 33
+change 17
+change 2
