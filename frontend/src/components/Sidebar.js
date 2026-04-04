@@ -53,7 +53,3 @@ export default function Sidebar({ activePage, onNavigate, collapsed }) {
     </aside>
   );
 }
-change 21
-change 1
-change 14
-change 22

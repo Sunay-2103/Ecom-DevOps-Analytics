@@ -28,10 +28,3 @@ export const getCategories = ()            => client.get('/api/products/categori
 export const getUsers = (params = '') => client.get(`/api/users/?limit=100${params}`).then(r => r.data);
 
 export default client;
-
-# Updated on 2026-02-01 by Sunay
-
-# Updated on 2026-03-11 by Anwar
-change 31
-change 17
-change 17

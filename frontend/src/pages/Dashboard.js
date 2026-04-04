@@ -19,7 +19,16 @@ const COLORS = [
   '#f97316', // Orange
   '#3b82f6', // Blue
 ];
-const fmt = n => (n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Number(n ?? 0).toFixed(0)}`);
+const fmtINR = n => {
+  if (n == null) return '₹0';
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`;
+  if (n >= 100000)  return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000)    return `₹${(n / 1000).toFixed(1)}K`;
+  return `₹${Math.round(n).toLocaleString('en-IN')}`;
+};
+const fmt = fmtINR;
+const fmtINRFull = n => `₹${Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+const fmtChange = pct => pct == null ? null : (pct >= 0 ? `+${pct.toFixed(1)}%` : `${pct.toFixed(1)}%`);
 
 function KPICard({ label, value, change, color, icon }) {
   return (
@@ -62,10 +71,10 @@ export default function Dashboard() {
           ))
         ) : (
           <>
-            <KPICard label="Total Revenue"   value={fmt(kpi?.total_revenue)}   change="+12.4%" color="green"  icon="💰" />
-            <KPICard label="Total Orders"    value={kpi?.total_orders?.toLocaleString()} change="+8.1%"  color="purple" icon="🛒" />
-            <KPICard label="Active Users"    value={kpi?.total_users?.toLocaleString()}  change="+5.6%"  color="red"    icon="👥" />
-            <KPICard label="Avg Order Value" value={fmt(kpi?.avg_order_value)}  change="+3.2%" color="yellow" icon="📈" />
+            <KPICard label="Total Revenue"   value={fmt(kpi?.total_revenue)}   change={fmtChange(kpi?.revenue_change)} color="green"  icon="💰" />
+            <KPICard label="Total Orders"    value={kpi?.total_orders?.toLocaleString()} change={fmtChange(kpi?.orders_change)}  color="purple" icon="🛒" />
+            <KPICard label="Active Users"    value={kpi?.total_users?.toLocaleString()}  change={fmtChange(kpi?.users_change)}   color="red"    icon="👥" />
+            <KPICard label="Avg Order Value" value={fmt(kpi?.avg_order_value)}  change={fmtChange(kpi?.aov_change)} color="yellow" icon="📈" />
           </>
         )}
       </div>
@@ -117,7 +126,7 @@ export default function Dashboard() {
                 />
                 <YAxis
                   tick={{ fill: '#64748b', fontSize: 12 }} tickLine={false} axisLine={false}
-                  tickFormatter={v => `$${(v / 1000).toFixed(0)}k`}
+                  tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`}
                   style={{ fontSize: 12 }}
                 />
                 <Tooltip
@@ -133,7 +142,7 @@ export default function Dashboard() {
                     const date = new Date(d);
                     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                   }}
-                  formatter={v => [`$${Number(v).toLocaleString('en-US', {maximumFractionDigits: 0})}`, 'Daily Revenue']}
+                  formatter={v => [fmtINRFull(v), 'Daily Revenue']}  
                 />
                 <Area 
                   type="monotone" 
@@ -188,7 +197,7 @@ export default function Dashboard() {
                   fontSize: 13,
                   boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
                 }}
-                formatter={v => [`$${Number(v).toFixed(2)}`, 'Revenue']}
+                formatter={v => [fmtINRFull(v), 'Revenue']}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -219,7 +228,7 @@ export default function Dashboard() {
               tick={{ fill: '#64748b', fontSize: 12 }} 
               tickLine={false} 
               axisLine={false}
-              tickFormatter={v => `$${(v / 1000).toFixed(0)}k`}
+              tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`}
             />
             <YAxis
               type="category" 
@@ -237,7 +246,7 @@ export default function Dashboard() {
                 fontSize: 13,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
               }}
-              formatter={v => [`$${Number(v).toFixed(2)}`, 'Revenue']}
+              formatter={v => [fmtINRFull(v), 'Revenue']}
             />
             <Bar 
               dataKey="total_revenue" 
@@ -254,12 +263,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-# Updated on 2026-01-30 by Anwar
-change 1
-change 18
-change 30
-change 32
-change 3
-change 25
-change 15

@@ -19,16 +19,3 @@ def get_db():
         yield db
     finally:
         db.close()
-
-# Updated on 2026-01-26 by Anwar
-
-# Updated on 2026-03-07 by Anwar
-change 13
-change 7
-change 19
-change 24
-change 8
-change 8
-change 27
-change 3
-change 23

@@ -88,13 +88,3 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
         user_name=user.name,
         product_name=product.name,
     )
-
-# Updated on 2026-02-03 by Anwar
-
-# Updated on 2026-02-13 by Anwar
-
-# Updated on 2026-03-09 by Sunay
-
-# Updated on 2026-03-27 by Sunay
-change 9
-change 9

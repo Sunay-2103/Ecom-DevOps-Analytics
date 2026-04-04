@@ -48,19 +48,3 @@ def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_product)
     return db_product
-
-# Updated on 2026-01-24 by Sunay
-
-# Updated on 2026-02-07 by Anwar
-
-# Updated on 2026-02-15 by Sunay
-
-# Updated on 2026-02-25 by Anwar
-
-# Updated on 2026-03-13 by Sunay
-
-# Updated on 2026-03-21 by Anwar
-
-# Updated on 2026-03-25 by Anwar
-change 14
-change 7

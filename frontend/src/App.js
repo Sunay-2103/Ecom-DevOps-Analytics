@@ -38,5 +38,3 @@ export default function App() {
     </div>
   );
 }
-change 9
-change 12

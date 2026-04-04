@@ -21,14 +21,3 @@ export default function Navbar({ title, onToggleSidebar }) {
     </header>
   );
 }
-
-# Updated on 2026-02-11 by Sunay
-
-# Updated on 2026-03-15 by Sunay
-change 13
-change 21
-change 13
-change 4
-change 11
-change 16
-change 26

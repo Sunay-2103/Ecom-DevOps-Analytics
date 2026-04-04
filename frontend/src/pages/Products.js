@@ -100,5 +100,3 @@ export default function Products() {
     </div>
   );
 }
-change 8
-change 5

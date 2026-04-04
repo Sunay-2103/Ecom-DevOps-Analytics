@@ -55,7 +55,3 @@
 - **Dimension**: segment
 - **Measures**: COUNT(user_id), SUM(total_price), AVG(total_price)
 - **Title**: Customer Segment Performance
-change 7
-change 11
-change 16
-change 34

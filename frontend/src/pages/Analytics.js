@@ -18,6 +18,14 @@ const COLORS = [
   '#14b8a6', // Teal
 ];
 
+const fmtINR = n => {
+  if (n == null) return '₹0';
+  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000)   return `₹${(n / 1000).toFixed(1)}K`;
+  return `₹${Math.round(n).toLocaleString('en-IN')}`;
+};
+const fmtINRFull = n => `₹${Number(n ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+
 export default function Analytics() {
   const [trendView, setTrendView] = useState('weekly');
 
@@ -29,10 +37,13 @@ export default function Analytics() {
 
   const salesData = trendView === 'weekly' ? (weekly ?? []) : (daily ?? []);
 
-  const radarData = (catRev ?? []).map(c => ({
+  const radarData = (catRev ?? [])
+    .filter(c => c.category !== 'Imported')
+    .map(c => ({
     subject: c.category.replace(' & ', '/'),
     revenue: Math.round(c.revenue / 1000),
-    orders:  Math.round(c.orders / 100),
+    orders:  Math.round(c.orders  / 10),
+    target:  Math.round((c.target || 0) / 1000),
   }));
 
   const SEGMENT_COLOR = ['#10b981','#6366f1','#ef4444'];
@@ -84,7 +95,7 @@ export default function Analytics() {
               tick={{ fill: '#64748b', fontSize: 12 }} 
               tickLine={false} 
               axisLine={false}
-              tickFormatter={v => `$${(v / 1000).toFixed(0)}k`}
+              tickFormatter={v => `₹${(v / 1000).toFixed(0)}K`}
             />
             <YAxis
               yAxisId="right" 
@@ -101,7 +112,7 @@ export default function Analytics() {
                 fontSize: 13,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
               }}
-              formatter={(v, n) => n === 'revenue' ? [`$${Number(v).toFixed(2)}`, 'Revenue'] : [v, 'Orders']}
+              formatter={(v, n) => n === 'revenue' ? [fmtINRFull(v), 'Revenue'] : [v, 'Orders']}
             />
             <Legend 
               formatter={v => <span style={{ color: '#64748b', fontSize: 12, fontWeight: 500, textTransform: 'capitalize' }}>{v}</span>} 
@@ -207,7 +218,7 @@ export default function Analytics() {
               <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 500 }} />
               <PolarRadiusAxis tick={{ fill: '#64748b', fontSize: 10 }} />
               <Radar 
-                name="Revenue ($k)" 
+                name="Revenue (₹K)" 
                 dataKey="revenue" 
                 stroke="#10b981" 
                 fill="url(#radarGrad1)"
@@ -216,12 +227,21 @@ export default function Analytics() {
                 animationDuration={800}
               />
               <Radar 
-                name="Order Vol (×100)" 
+                name="Orders (×10)" 
                 dataKey="orders"  
                 stroke="#6366f1" 
                 fill="url(#radarGrad2)"
                 fillOpacity={0.5}
                 strokeWidth={2}
+                animationDuration={800}
+              />
+              <Radar
+                name="Target (₹K)"
+                dataKey="target"
+                stroke="#f59e0b"
+                fill="none"
+                strokeWidth={2}
+                strokeDasharray="5 3"
                 animationDuration={800}
               />
               <Legend 
@@ -263,7 +283,7 @@ export default function Analytics() {
                 {seg.count.toLocaleString()}
               </div>
               <div style={{ fontSize: 13, color: SEGMENT_COLOR[i % 3], fontWeight: 600 }}>
-                ${seg.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} revenue
+                ₹{seg.revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })} revenue
               </div>
             </div>
           ))}
@@ -272,9 +292,3 @@ export default function Analytics() {
     </div>
   );
 }
-
-# Updated on 2026-02-17 by Anwar
-change 33
-change 0
-change 1
-change 11

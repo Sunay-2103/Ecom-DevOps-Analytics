@@ -44,13 +44,3 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 @router.get("/count/total")
 def count_users(db: Session = Depends(get_db)):
     return {"total": db.query(User).count()}
-
-# Updated on 2026-01-20 by Sunay
-
-# Updated on 2026-01-28 by Sunay
-
-# Updated on 2026-02-21 by Anwar
-
-# Updated on 2026-02-27 by Sunay
-
-# Updated on 2026-03-17 by Anwar

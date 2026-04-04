@@ -150,9 +150,3 @@ export default function TableauExport() {
     </div>
   );
 }
-
-# Updated on 2026-03-01 by Sunay
-change 21
-change 31
-change 20
-change 20

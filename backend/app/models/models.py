@@ -45,12 +45,3 @@ class Order(Base):
 
     user = relationship("User", back_populates="orders")
     product = relationship("Product", back_populates="orders")
-
-# Updated on 2026-03-19 by Sunay
-change 4
-change 20
-change 30
-change 22
-change 27
-change 19
-change 24

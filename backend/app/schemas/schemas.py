@@ -79,6 +79,11 @@ class KPISummary(BaseModel):
     total_users: int
     total_products: int
     avg_order_value: float
+    # Month-over-month growth percentages (last 30 days vs prior 30 days)
+    revenue_change: Optional[float] = 0.0
+    orders_change: Optional[float] = 0.0
+    users_change: Optional[float] = 0.0
+    aov_change: Optional[float] = 0.0
 
 
 class DailySales(BaseModel):
@@ -99,12 +104,10 @@ class CategoryRevenue(BaseModel):
     category: str
     revenue: float
     orders: int
+    target: Optional[float] = 0.0
 
 
 class CustomerSegment(BaseModel):
     segment: str
     count: int
     revenue: float
-change 22
-change 4
-change 25
