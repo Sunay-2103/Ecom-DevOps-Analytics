@@ -133,7 +133,4 @@ except Exception as e:
     print(f"❌ Error loading data: {e}")
     raise
 finally:
-    db.close()change 26
-change 0
-change 24
-change 24
+    db.close()

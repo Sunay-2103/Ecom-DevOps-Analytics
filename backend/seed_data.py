@@ -1,10 +1,12 @@
 """
-Seed script — generates 1000+ synthetic records for the e-commerce platform.
+Seed script — generates realistic synthetic e-commerce data over 365 days.
+Includes growth trend, weekday/seasonal patterns, and sale-day spikes.
 Run: python seed_data.py
 """
 import random
 import sys
 import os
+import math
 from datetime import datetime, timedelta
 from faker import Faker
 
@@ -14,6 +16,7 @@ from app.models.models import User, Product, Order
 
 fake = Faker()
 random.seed(42)
+Faker.seed(42)
 
 CATEGORIES = ["Electronics", "Clothing", "Books", "Home & Garden", "Sports", "Beauty", "Toys", "Food"]
 
@@ -75,6 +78,37 @@ CITIES = [
 SEGMENTS = ["VIP", "Regular", "New"]
 SEGMENT_WEIGHTS = [0.1, 0.6, 0.3]
 
+# Realistic category weights — drives both order volume and radar chart proportions
+CATEGORY_DIST = [
+    ("Electronics",   0.20),
+    ("Clothing",      0.22),
+    ("Home & Garden", 0.14),
+    ("Sports",        0.13),
+    ("Books",         0.10),
+    ("Beauty",        0.09),
+    ("Toys",          0.07),
+    ("Food",          0.05),
+]
+
+# Weekday multipliers (Mon=0 … Sun=6)
+DOW_FACTOR = [1.05, 1.10, 1.20, 1.20, 1.40, 0.85, 0.60]
+
+# Monthly seasonal multipliers
+SEASONAL = {
+    1: 0.75, 2: 0.70, 3: 0.85, 4: 0.90, 5: 0.95,  6: 0.95,
+    7: 0.90, 8: 0.95, 9: 1.00, 10: 1.10, 11: 1.50, 12: 1.70,
+}
+
+
+def daily_order_count(day_idx: int, total_days: int, target_date: datetime) -> int:
+    """Return realistic order count for a given day index with growth + weekday + seasonal + noise."""
+    # Logistic-style growth: starts ~30 orders/day, reaches ~75 by end of period
+    growth = 30 + (day_idx / total_days) * 45
+    dow     = DOW_FACTOR[target_date.weekday()]
+    season  = SEASONAL.get(target_date.month, 1.0)
+    noise   = random.uniform(0.85, 1.15)
+    return max(5, int(growth * dow * season * noise))
+
 
 def seed():
     db = SessionLocal()
@@ -112,36 +146,72 @@ def seed():
                 city=city,
                 country=country,
                 segment=seg,
-                created_at=fake.date_time_between(start_date="-18m", end_date="-1d"),
+                created_at=fake.date_time_between(start_date="-18M", end_date="-1d"),
             )
             db.add(u)
             users.append(u)
         db.commit()
         print(f"✓ Seeded {len(users)} users")
 
-        # Seed Orders (1200+)
-        order_count = 0
-        for _ in range(1300):
-            user = random.choice(users)
-            product = random.choice(products)
-            qty = random.choices([1, 2, 3, 4, 5], weights=[50, 25, 12, 8, 5])[0]
-            total = round(product.price * qty, 2)
-            status = random.choices(
-                ["completed", "pending", "refunded"],
-                weights=[85, 10, 5]
-            )[0]
-            o = Order(
-                user_id=user.id,
-                product_id=product.id,
-                quantity=qty,
-                total_price=total,
-                status=status,
-                created_at=fake.date_time_between(start_date="-12m", end_date="now"),
-            )
-            db.add(o)
-            order_count += 1
-        db.commit()
-        print(f"✓ Seeded {order_count} orders")
+        # Build product-by-category lookup for weighted selection
+        product_by_cat: dict[str, list] = {}
+        for p in products:
+            product_by_cat.setdefault(p.category, []).append(p)
+        cat_names  = [c for c, _ in CATEGORY_DIST]
+        cat_wts    = [w for _, w in CATEGORY_DIST]
+
+        # Seed Orders — 365 days with growth trend, weekday/seasonal patterns, spike days
+        TOTAL_DAYS = 365
+        today      = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=0)
+        spike_days = set(random.sample(range(TOTAL_DAYS), 8))   # 8 sale-event days
+
+        all_orders: list[Order] = []
+        total_seeded = 0
+
+        for day_idx in range(TOTAL_DAYS):
+            target_date = today - timedelta(days=TOTAL_DAYS - day_idx - 1)
+            num = daily_order_count(day_idx, TOTAL_DAYS, target_date)
+            if day_idx in spike_days:
+                num = int(num * random.uniform(2.5, 4.0))   # sale-day spike
+
+            for _ in range(num):
+                category = random.choices(cat_names, weights=cat_wts)[0]
+                product  = random.choice(product_by_cat.get(category, products))
+                user     = random.choice(users)
+                qty      = random.choices([1, 2, 3, 4, 5], weights=[55, 25, 12, 5, 3])[0]
+                total    = round(product.price * qty, 2)
+                status   = random.choices(
+                    ["completed", "pending", "refunded"],
+                    weights=[88, 8, 4],
+                )[0]
+                # Random time during business hours (peak at 2 PM)
+                hour   = int(max(6, min(23, random.gauss(14, 4))))
+                minute = random.randint(0, 59)
+                order_date = target_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+
+                all_orders.append(Order(
+                    user_id=user.id,
+                    product_id=product.id,
+                    quantity=qty,
+                    total_price=total,
+                    status=status,
+                    created_at=order_date,
+                ))
+
+            # Flush in batches of 1000 to avoid memory pressure
+            if len(all_orders) >= 1000:
+                db.add_all(all_orders)
+                db.commit()
+                total_seeded += len(all_orders)
+                all_orders = []
+
+        if all_orders:
+            db.add_all(all_orders)
+            db.commit()
+            total_seeded += len(all_orders)
+
+        print(f"✓ Seeded {total_seeded} orders across {TOTAL_DAYS} days "
+              f"({TOTAL_DAYS} data points, {len(spike_days)} spike days)")
         print("\n🚀 Database seeded successfully!")
 
     except Exception as e:
@@ -155,5 +225,3 @@ def seed():
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
     seed()
-change 7
-change 7
