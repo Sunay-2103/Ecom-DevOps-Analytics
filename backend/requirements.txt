@@ -8,9 +8,5 @@ python-multipart==0.0.9
 alembic==1.13.1
 python-dotenv==1.0.1
 pandas>=2.1.0
-
-# Updated on 2026-02-23 by Sunay
-change 10
-change 33
-change 17
-change 2
+pytest>=8.2.0
+httpx>=0.27.0

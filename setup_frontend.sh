@@ -1431,8 +1431,3 @@ EOF
 
 chmod +x /home/claude/ecommerce-devops-platform/setup_frontend.sh
 echo "Script created"
-change 5
-change 15
-change 29
-change 34
-change 10

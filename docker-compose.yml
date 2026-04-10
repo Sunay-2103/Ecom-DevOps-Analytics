@@ -1,45 +1,66 @@
-version: "3.9"
+# ============================================================
+# E-Commerce DevOps Analytics — Docker Compose
+# Run everything with: docker compose up --build
+# ============================================================
 
 services:
 
-  # ─── PostgreSQL Database ───────────────────────────────
+  # ─── PostgreSQL Database ───────────────────────────────────
   database:
     image: postgres:15-alpine
     container_name: ecom_db
     restart: unless-stopped
+    env_file: .env
     environment:
-      POSTGRES_USER: ecom_user
-      POSTGRES_PASSWORD: ecom_pass
-      POSTGRES_DB: ecom_db
+      POSTGRES_USER: ${POSTGRES_USER:-ecom_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ecom_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-ecom_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "5433:5432"   # avoid local conflict
+      - "${POSTGRES_PORT:-5433}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ecom_user -d ecom_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ecom_user} -d ${POSTGRES_DB:-ecom_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    networks:
+      - ecom_net
 
-  # ─── FastAPI Backend ───────────────────────────────────
+  # ─── FastAPI Backend ───────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: runtime
     container_name: ecom_backend
     restart: unless-stopped
+    env_file: .env
     environment:
-      DATABASE_URL: postgresql://ecom_user:ecom_pass@database:5432/ecom_db
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ecom_user}:${POSTGRES_PASSWORD:-ecom_pass}@database:5432/${POSTGRES_DB:-ecom_db}
       PYTHONPATH: /app
+      DB_HOST: database
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-ecom_user}
     ports:
       - "8000:8000"
     depends_on:
       database:
         condition: service_healthy
     volumes:
-      - ./backend:/app
+      - etl_exports:/app/exports
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - ecom_net
 
-  # ─── React Frontend ────────────────────────────────────
+  # ─── React Frontend (Nginx) ────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -47,13 +68,49 @@ services:
     container_name: ecom_frontend
     restart: unless-stopped
     environment:
-      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - ecom_net
+
+  # ─── ETL Pipeline (one-shot export for Tableau) ────────────
+  etl:
+    build:
+      context: ./etl
+      dockerfile: Dockerfile
+    container_name: ecom_etl
+    restart: "no"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ecom_user}:${POSTGRES_PASSWORD:-ecom_pass}@database:5432/${POSTGRES_DB:-ecom_db}
+      ETL_OUTPUT_DIR: /app/exports
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - etl_exports:/app/exports
+    networks:
+      - ecom_net
+    profiles:
+      - etl
 
 volumes:
-  postgres_data:change 25
-change 19
-change 6
+  postgres_data:
+    name: ecom_postgres_data
+  etl_exports:
+    name: ecom_etl_exports
+
+networks:
+  ecom_net:
+    name: ecom_network
+    driver: bridge

@@ -8,7 +8,3 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Grant permissions
 GRANT ALL PRIVILEGES ON DATABASE ecom_db TO ecom_user;
-change 5
-change 22
-change 1
-change 19
